@@ -18,8 +18,9 @@ The command set intentionally does not include `/login`. Staff and owner permiss
 1. Install Node.js 22 or newer.
 2. Copy `.env.example` to `.env` and fill in `DISCORD_TOKEN` and `CLIENT_ID`.
 3. Run `npm install`.
-4. Run `npm run register` (`GUILD_ID` can be set for fast guild-level testing).
-5. Run `npm start`.
+4. Run `npm start`. The bot now registers all slash commands automatically when it connects.
+
+For fast testing, set `GUILD_ID` to the target server ID. Without `GUILD_ID`, commands are registered globally and Discord may take time to propagate them. `npm run register` remains available for manual registration.
 
 ## Railway
 
@@ -31,7 +32,7 @@ Create a Railway service from this GitHub repository and use `npm start` as the 
 - `DATA_DIR=/data` — persistent database directory
 - Optional: `SUPPORT_URL` and `WEBSITE_URL`
 
-Attach a Railway Volume mounted at `/data`. Without persistent storage, SQLite data will be lost when the service is replaced. Run `npm run register` once after configuring the Discord application, either locally or as a Railway one-off command.
+Attach a Railway Volume mounted at `/data`. Without persistent storage, SQLite data will be lost when the service is replaced. The running bot registers slash commands automatically after login; set `GUILD_ID` for immediate server-level command availability during setup.
 
 ## Discord setup
 

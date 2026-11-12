@@ -3,8 +3,9 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const crypto = require('node:crypto');
-const { Client, GatewayIntentBits, Partials, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, PermissionFlagsBits, MessageFlags, AttachmentBuilder, version: discordVersion } = require('discord.js');
+const { Client, GatewayIntentBits, Partials, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, PermissionFlagsBits, MessageFlags, AttachmentBuilder, REST, Routes, version: discordVersion } = require('discord.js');
 const db = require('./db');
+const commands = require('./commands');
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent], partials: [Partials.GuildMember] });
 const ephemeral = MessageFlags.Ephemeral;
@@ -201,7 +202,23 @@ async function games(i) {
 
 async function help(i) { return respond(i, { embeds: [embed('OBSCURITY Help', '**Whitelist & Blacklist** — `/whitelist`, `/unwhitelist`, `/blacklist`, `/check`\n**Licence Keys** — `/genkey`, `/redeem`, `/revokekey`, `/keylist`\n**Scripts** — `/create script`, `/script info`, `/script panel`, `/script manage`\n**Administration** — `/set`, `/setstaff`, `/setadmin`, `/permissions`, `/logs`, `/export`\n**General** — `/profile`, `/serverinfo`, `/ping`, `/about`, `/botinfo`, `/support`, `/games`\n\nPrivate account and licence information is sent ephemerally. Restricted commands re-check permissions at execution time.')] }); }
 
-client.once('ready', () => console.log(`OBSCURITY online as ${client.user.tag}`));
+client.once('ready', async () => {
+  console.log(`OBSCURITY online as ${client.user.tag}`);
+  if (!process.env.CLIENT_ID) {
+    console.error('CLIENT_ID is missing; slash commands cannot be registered.');
+    return;
+  }
+  try {
+    const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
+    const route = process.env.GUILD_ID
+      ? Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID)
+      : Routes.applicationCommands(process.env.CLIENT_ID);
+    await rest.put(route, { body: commands });
+    console.log(`Registered ${commands.length} OBSCURITY slash commands${process.env.GUILD_ID ? ` to guild ${process.env.GUILD_ID}` : ' globally'}.`);
+  } catch (error) {
+    console.error('Slash-command registration failed:', error);
+  }
+});
 client.on('interactionCreate', async i => {
   try {
     if (i.isChatInputCommand()) return await handleCommand(i);
