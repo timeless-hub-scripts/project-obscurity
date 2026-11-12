@@ -201,7 +201,32 @@ async function games(i) {
 }
 
 async function help(i) { return respond(i, { embeds: [embed('OBSCURITY Help', '**Whitelist & Blacklist** — `/whitelist`, `/unwhitelist`, `/blacklist`, `/check`\n**Licence Keys** — `/genkey`, `/redeem`, `/revokekey`, `/keylist`\n**Scripts** — `/create script`, `/script info`, `/script panel`, `/script manage`\n**Administration** — `/set`, `/setstaff`, `/setadmin`, `/permissions`, `/logs`, `/export`\n**General** — `/profile`, `/serverinfo`, `/ping`, `/about`, `/botinfo`, `/support`, `/games`\n\nPrivate account and licence information is sent ephemerally. Restricted commands re-check permissions at execution time.')] }); }
-
+client.on('guildCreate', async guild => {
+  try {
+    const me = guild.members.me || await guild.members.fetchMe().catch(() => null);
+    const canSend = channel => channel?.isTextBased() && (!me || channel.permissionsFor(me)?.has([PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks]));
+    const channel = [guild.systemChannel, ...guild.channels.cache.values()]
+      .find(canSend);
+    if (!channel) {
+      console.warn(`Joined ${guild.name} (${guild.id}) but could not find a channel where I can send the welcome embed.`);
+      return;
+    }
+    await channel.send({ embeds: [new EmbedBuilder()
+      .setColor(0x7654d6)
+      .setTitle('Thanks for Inviting Obscurity')
+      .setDescription('OBSCURITY is now connected to your server.\n\nUse `/help` to browse the command modules and begin setup.')
+      .addFields(
+        { name: 'Getting Started', value: 'Configure your roles with `/set buyer`, `/setstaff`, and `/setadmin`.' },
+        { name: 'Script Management', value: 'Create your first script with `/create script` and publish its customer panel with `/script panel`.' },
+        { name: 'Support', value: 'Use `/support` for support links and `/permissions` to review the current server configuration.' }
+      )
+      .setFooter({ text: `OBSCURITY • ${commands.length} slash commands available` })
+      .setTimestamp()] });
+    console.log(`Sent OBSCURITY welcome embed in ${guild.name} (${guild.id}).`);
+  } catch (error) {
+    console.error(`Failed to send the OBSCURITY welcome embed in ${guild.name}:`, error);
+  }
+});
 client.once('ready', async () => {
   console.log(`OBSCURITY online as ${client.user.tag}`);
   if (!process.env.CLIENT_ID) {
